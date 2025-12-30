@@ -34,7 +34,7 @@ const Index = () => {
   };
 
   const handleGeneratePdf = async () => {
-    await generatePdf(invoice, 'invoice-content');
+    await generatePdf(invoice);
     toast({ title: 'PDF generado', description: 'El archivo se ha descargado.' });
   };
 
