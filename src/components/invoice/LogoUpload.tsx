@@ -1,6 +1,7 @@
 import { useRef, useState, useCallback } from 'react';
 import { Upload, X, Image } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface LogoUploadProps {
   logo?: string;
@@ -9,12 +10,13 @@ interface LogoUploadProps {
 }
 
 export const LogoUpload = ({ logo, onLogoChange, className }: LogoUploadProps) => {
+  const { t } = useLanguage();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isDragging, setIsDragging] = useState(false);
 
   const handleFile = useCallback((file: File) => {
     if (!file.type.startsWith('image/')) return;
-    
+
     const reader = new FileReader();
     reader.onload = (e) => {
       onLogoChange(e.target?.result as string);
@@ -71,12 +73,12 @@ export const LogoUpload = ({ logo, onLogoChange, className }: LogoUploadProps) =
         className="hidden"
         onChange={handleInputChange}
       />
-      
+
       {logo ? (
         <div className="relative">
-          <img 
-            src={logo} 
-            alt="Logo de la empresa" 
+          <img
+            src={logo}
+            alt={t('logo')}
             className="max-h-24 max-w-full object-contain mx-auto"
           />
           <button
@@ -92,8 +94,8 @@ export const LogoUpload = ({ logo, onLogoChange, className }: LogoUploadProps) =
             <Image className="w-6 h-6" />
           </div>
           <div className="text-center">
-            <p className="text-sm font-medium">Subir Logo</p>
-            <p className="text-xs">Arrastra o haz clic para seleccionar</p>
+            <p className="text-sm font-medium">{t('logo')}</p>
+            <p className="text-xs">{t('placeholderDescription')}</p>
           </div>
         </div>
       )}
@@ -103,13 +105,15 @@ export const LogoUpload = ({ logo, onLogoChange, className }: LogoUploadProps) =
 
 // Print version that just shows the logo
 export const LogoPrint = ({ logo }: { logo?: string }) => {
+  const { t } = useLanguage();
+
   if (!logo) return null;
-  
+
   return (
     <div className="print-only">
-      <img 
-        src={logo} 
-        alt="Logo de la empresa" 
+      <img
+        src={logo}
+        alt={t('logo')}
         className="max-h-24 max-w-full object-contain"
       />
     </div>

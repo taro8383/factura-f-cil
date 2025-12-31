@@ -1,6 +1,7 @@
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Palette } from 'lucide-react';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface ColorPickerProps {
   color: string;
@@ -21,13 +22,15 @@ const PRESET_COLORS = [
 ];
 
 export const ColorPicker = ({ color, onChange }: ColorPickerProps) => {
+  const { t } = useLanguage();
+
   return (
     <div className="space-y-2">
       <div className="flex items-center gap-2">
         <Palette className="h-4 w-4 text-muted-foreground" />
-        <Label>Color de Acento (PDF)</Label>
+        <Label>{t('accentColor')}</Label>
       </div>
-      
+
       <div className="flex items-center gap-3">
         <div className="flex gap-1 flex-wrap">
           {PRESET_COLORS.map((preset) => (
@@ -43,7 +46,7 @@ export const ColorPicker = ({ color, onChange }: ColorPickerProps) => {
             />
           ))}
         </div>
-        
+
         <div className="flex items-center gap-2">
           <Input
             type="color"

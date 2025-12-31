@@ -1,5 +1,18 @@
 import { useCallback } from 'react';
 import { Invoice, MONEDAS, TERMINOS_PAGO, TASAS_IMPUESTOS } from '@/types/invoice';
+import { Language } from '@/contexts/LanguageContext';
+
+const getPdfLabels = (language: Language) => ({
+  invoice: language === 'en' ? 'INVOICE' : 'FACTURA',
+  from: language === 'en' ? 'FROM:' : 'DE:',
+  to: language === 'en' ? 'TO:' : 'PARA:',
+  date: language === 'en' ? 'Date' : 'Fecha',
+  dueDate: language === 'en' ? 'Due Date' : 'Vencimiento',
+  payment: language === 'en' ? 'Payment' : 'Pago',
+  currency: language === 'en' ? 'Currency' : 'Moneda',
+  notes: language === 'en' ? 'Notes' : 'Notas',
+  paymentInstructions: language === 'en' ? 'Payment Instructions' : 'Instrucciones de Pago',
+});
 
 export const usePdfGenerator = () => {
   const formatCurrency = useCallback((amount: number, monedaCodigo: string) => {
@@ -7,7 +20,7 @@ export const usePdfGenerator = () => {
     return `${moneda?.simbolo || '$'}${amount.toFixed(2)}`;
   }, []);
 
-  const generatePdf = useCallback(async (invoice: Invoice) => {
+  const generatePdf = useCallback(async (invoice: Invoice, language: Language = 'es') => {
     const { default: jsPDF } = await import('jspdf');
     
     const pdf = new jsPDF({
@@ -33,6 +46,7 @@ export const usePdfGenerator = () => {
     const textColor: [number, number, number] = [31, 41, 55];
     const mutedColor: [number, number, number] = [107, 114, 128];
     const vis = invoice.camposVisibles;
+    const labels = getPdfLabels(language);
 
     // Helper functions
     const setFont = (style: 'normal' | 'bold' = 'normal', size = 10) => {
@@ -74,10 +88,12 @@ export const usePdfGenerator = () => {
 
     // Invoice title on the right
     setFont('bold', 24);
-    drawText('FACTURA', pageWidth - margin, y + 8, { color: primaryColor, align: 'right' });
-    
-    setFont('normal', 11);
-    drawText(invoice.numero, pageWidth - margin, y + 15, { align: 'right' });
+    drawText(labels.invoice, pageWidth - margin, y + 8, { color: primaryColor, align: 'right' });
+
+    if (vis.numero) {
+      setFont('normal', 11);
+      drawText(invoice.numero, pageWidth - margin, y + 15, { align: 'right' });
+    }
 
     y += 30;
 
@@ -86,7 +102,7 @@ export const usePdfGenerator = () => {
 
     // Company info
     setFont('bold', 10);
-    drawText('DE:', margin, y, { color: mutedColor });
+    drawText(labels.from, margin, y, { color: mutedColor });
     y += 5;
     
     if (vis.empresaNombre) {
@@ -113,7 +129,7 @@ export const usePdfGenerator = () => {
     const rightColX = margin + colWidth + 10;
 
     setFont('bold', 10);
-    drawText('PARA:', rightColX, clientY, { color: mutedColor });
+    drawText(labels.to, rightColX, clientY, { color: mutedColor });
     clientY += 5;
     
     if (vis.clienteNombre) {
@@ -137,37 +153,65 @@ export const usePdfGenerator = () => {
     y = Math.max(y, clientY) + 8;
 
     // === INVOICE DETAILS ===
-    const termino = TERMINOS_PAGO.find(t => t.valor === invoice.terminosPago)?.etiqueta || invoice.terminosPago;
-    
-    pdf.setFillColor(245, 247, 250);
-    pdf.roundedRect(margin, y, contentWidth, 12, 2, 2, 'F');
-    
-    y += 8;
-    setFont('normal', 9);
-    const detailsSpacing = contentWidth / 4;
-    
-    drawText(`Fecha: ${invoice.fechaFactura}`, margin + 5, y, { color: textColor });
-    drawText(`Vencimiento: ${invoice.fechaVencimiento}`, margin + detailsSpacing, y, { color: textColor });
-    drawText(`Pago: ${termino}`, margin + detailsSpacing * 2, y, { color: textColor });
-    drawText(`Moneda: ${invoice.moneda}`, margin + detailsSpacing * 3, y, { color: textColor });
+    const termino = TERMINOS_PAGO.find(t => t.valor === invoice.terminosPago);
+    const terminoEtiqueta = language === 'en' && termino?.etiquetaEn ? termino.etiquetaEn : termino?.etiqueta || invoice.terminosPago;
 
-    y += 12;
+    // Count visible fields
+    const visibleFieldsCount = [
+      vis.fechaFactura,
+      vis.fechaVencimiento,
+      vis.terminosPago,
+      vis.moneda
+    ].filter(Boolean).length;
+
+    if (visibleFieldsCount > 0) {
+      pdf.setFillColor(245, 247, 250);
+      pdf.roundedRect(margin, y, contentWidth, 12, 2, 2, 'F');
+
+      y += 8;
+      setFont('normal', 9);
+
+      let xOffset = 5;
+      const fieldSpacing = contentWidth / visibleFieldsCount;
+
+      if (vis.fechaFactura) {
+        drawText(`${labels.date}: ${invoice.fechaFactura}`, margin + xOffset, y, { color: textColor });
+        xOffset += fieldSpacing;
+      }
+      if (vis.fechaVencimiento) {
+        drawText(`${labels.dueDate}: ${invoice.fechaVencimiento}`, margin + xOffset, y, { color: textColor });
+        xOffset += fieldSpacing;
+      }
+      if (vis.terminosPago) {
+        drawText(`${labels.payment}: ${terminoEtiqueta}`, margin + xOffset, y, { color: textColor });
+        xOffset += fieldSpacing;
+      }
+      if (vis.moneda) {
+        drawText(`${labels.currency}: ${invoice.moneda}`, margin + xOffset, y, { color: textColor });
+      }
+
+      y += 12;
+    }
 
     // === ITEMS TABLE ===
     pdf.setFillColor(...primaryColor);
     pdf.rect(margin, y, contentWidth, 8, 'F');
-    
+
     setFont('bold', 9);
     pdf.setTextColor(255, 255, 255);
-    
+
     const descWidth = contentWidth * 0.45;
     const qtyWidth = contentWidth * 0.15;
     const priceWidth = contentWidth * 0.2;
-    
-    pdf.text('Descripción', margin + 3, y + 5.5);
-    pdf.text('Cantidad', margin + descWidth + qtyWidth / 2, y + 5.5, { align: 'center' });
-    pdf.text('Precio Unit.', margin + descWidth + qtyWidth + priceWidth / 2, y + 5.5, { align: 'center' });
-    pdf.text('Total', margin + contentWidth - 3, y + 5.5, { align: 'right' });
+
+    const tableHeaders = language === 'en'
+      ? ['Description', 'Quantity', 'Unit Price', 'Total']
+      : ['Descripción', 'Cantidad', 'Precio Unit.', 'Total'];
+
+    pdf.text(tableHeaders[0], margin + 3, y + 5.5);
+    pdf.text(tableHeaders[1], margin + descWidth + qtyWidth / 2, y + 5.5, { align: 'center' });
+    pdf.text(tableHeaders[2], margin + descWidth + qtyWidth + priceWidth / 2, y + 5.5, { align: 'center' });
+    pdf.text(tableHeaders[3], margin + contentWidth - 3, y + 5.5, { align: 'right' });
 
     y += 8;
 
@@ -206,30 +250,41 @@ export const usePdfGenerator = () => {
     const totalsX = margin + contentWidth - 70;
 
     setFont('normal', 9);
-    drawText('Subtotal:', totalsX, y, { color: mutedColor });
+    drawText(language === 'en' ? 'Subtotal:' : 'Subtotal:', totalsX, y, { color: mutedColor });
     drawText(`${simbolo}${invoice.subtotal.toFixed(2)}`, margin + contentWidth, y, { align: 'right' });
     y += 5;
 
     if (invoice.descuentoMonto > 0) {
-      const descuentoLabel = invoice.descuentoTipo === 'porcentaje' 
-        ? `Descuento (${invoice.descuentoValor}%):` 
-        : 'Descuento:';
+      const descuentoLabel = invoice.descuentoTipo === 'porcentaje'
+        ? (language === 'en' ? `Discount (${invoice.descuentoValor}%):` : `Descuento (${invoice.descuentoValor}%):`)
+        : (language === 'en' ? 'Discount:' : 'Descuento:');
       drawText(descuentoLabel, totalsX, y, { color: mutedColor });
       drawText(`-${simbolo}${invoice.descuentoMonto.toFixed(2)}`, margin + contentWidth, y, { color: [220, 38, 38], align: 'right' });
       y += 5;
     }
 
-    const tasaLabel = TASAS_IMPUESTOS.find(t => t.valor === invoice.tasaImpuestos)?.etiqueta || `IVA (${invoice.tasaImpuestos}%)`;
+    const tasa = TASAS_IMPUESTOS.find(t => t.valor === invoice.tasaImpuestos);
+    let tasaLabel: string;
+    if (invoice.tasaImpuestos === -1) {
+      // Custom tax rate
+      const customRate = invoice.tasaImpuestosCustom || 0;
+      tasaLabel = language === 'en' ? `VAT (${customRate}%)` : `IVA (${customRate}%)`;
+    } else if (tasa) {
+      tasaLabel = language === 'en' && tasa.etiquetaEn ? tasa.etiquetaEn : tasa.etiqueta;
+    } else {
+      // Shouldn't happen, but fallback
+      tasaLabel = language === 'en' ? `VAT (${invoice.tasaImpuestos}%)` : `IVA (${invoice.tasaImpuestos}%)`;
+    }
     drawText(tasaLabel + ':', totalsX, y, { color: mutedColor });
     drawText(`${simbolo}${invoice.impuestosMonto.toFixed(2)}`, margin + contentWidth, y, { align: 'right' });
     y += 6;
 
     pdf.setFillColor(...primaryColor);
     pdf.roundedRect(totalsX - 5, y - 1, 75, 10, 2, 2, 'F');
-    
+
     setFont('bold', 11);
     pdf.setTextColor(255, 255, 255);
-    pdf.text('TOTAL:', totalsX, y + 6);
+    pdf.text(language === 'en' ? 'TOTAL:' : 'TOTAL:', totalsX, y + 6);
     pdf.text(`${simbolo}${invoice.total.toFixed(2)} ${invoice.moneda}`, margin + contentWidth - 2, y + 6, { align: 'right' });
 
     y += 18;
@@ -237,7 +292,7 @@ export const usePdfGenerator = () => {
     // === FOOTER: Notes & Payment Instructions ===
     const showNotas = vis.notas && invoice.notas;
     const showInstr = vis.instruccionesPago && invoice.instruccionesPago;
-    
+
     if (showNotas || showInstr) {
       pdf.setDrawColor(229, 231, 235);
       pdf.line(margin, y, margin + contentWidth, y);
@@ -245,7 +300,7 @@ export const usePdfGenerator = () => {
 
       if (showNotas) {
         setFont('bold', 9);
-        drawText('Notas:', margin, y, { color: mutedColor });
+        drawText(labels.notes + ':', margin, y, { color: mutedColor });
         y += 5;
         setFont('normal', 8);
         const notasLines = pdf.splitTextToSize(invoice.notas, contentWidth / 2 - 5);
@@ -258,11 +313,11 @@ export const usePdfGenerator = () => {
       if (showInstr) {
         let instrY = y - (showNotas ? 9 + Math.min(3, pdf.splitTextToSize(invoice.notas, contentWidth / 2 - 5).length) * 4 : 0);
         const instrX = margin + contentWidth / 2 + 5;
-        
+
         if (!showNotas) instrY = y - 8;
-        
+
         setFont('bold', 9);
-        drawText('Instrucciones de Pago:', instrX, instrY, { color: mutedColor });
+        drawText(labels.paymentInstructions + ':', instrX, instrY, { color: mutedColor });
         instrY += 5;
         setFont('normal', 8);
         const instrLines = pdf.splitTextToSize(invoice.instruccionesPago, contentWidth / 2 - 10);
@@ -273,7 +328,9 @@ export const usePdfGenerator = () => {
       }
     }
 
-    const fileName = `Factura_${invoice.numero}_${invoice.fechaFactura}.pdf`;
+    const fileName = language === 'en'
+      ? `Invoice_${invoice.numero}_${invoice.fechaFactura}.pdf`
+      : `Factura_${invoice.numero}_${invoice.fechaFactura}.pdf`;
     pdf.save(fileName);
   }, []);
 

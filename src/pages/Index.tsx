@@ -9,9 +9,12 @@ import { ItemsTable } from '@/components/invoice/ItemsTable';
 import { InvoiceTotals } from '@/components/invoice/InvoiceTotals';
 import { InvoiceFooter } from '@/components/invoice/InvoiceFooter';
 import { InvoiceControls, InvoiceHistorySheet } from '@/components/invoice/InvoiceControls';
+import { LanguageToggle } from '@/components/LanguageToggle';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 const Index = () => {
   const { toast } = useToast();
+  const { t, language } = useLanguage();
   const {
     invoice,
     history,
@@ -25,22 +28,31 @@ const Index = () => {
     duplicateFromHistory,
     deleteFromHistory,
   } = useInvoice();
-  
+
   const { generatePdf, printInvoice } = usePdfGenerator();
 
   const handleSave = () => {
     saveToHistory();
-    toast({ title: 'Factura guardada', description: `${invoice.numero} guardada en el historial.` });
+    toast({
+      title: t('toastSaved'),
+      description: t('toastSavedDesc').replace('{numero}', invoice.numero),
+    });
   };
 
   const handleGeneratePdf = async () => {
-    await generatePdf(invoice);
-    toast({ title: 'PDF generado', description: 'El archivo se ha descargado.' });
+    await generatePdf(invoice, language);
+    toast({
+      title: t('toastPdfGenerated'),
+      description: t('toastPdfDesc'),
+    });
   };
 
   const handleClear = () => {
     clearInvoice();
-    toast({ title: 'Nueva factura', description: 'Formulario reiniciado.' });
+    toast({
+      title: t('toastNewInvoice'),
+      description: t('toastNewInvoiceDesc'),
+    });
   };
 
   return (
@@ -49,15 +61,18 @@ const Index = () => {
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 no-print">
           <div>
-            <h1 className="text-3xl font-bold text-foreground">Generador de Facturas</h1>
-            <p className="text-muted-foreground">Crea facturas profesionales fácilmente</p>
+            <h1 className="text-3xl font-bold text-foreground">{t('appTitle')}</h1>
+            <p className="text-muted-foreground">{t('appDescription')}</p>
           </div>
-          <InvoiceHistorySheet
-            history={history}
-            onLoad={loadFromHistory}
-            onDuplicate={duplicateFromHistory}
-            onDelete={deleteFromHistory}
-          />
+          <div className="flex items-center gap-3">
+            <LanguageToggle />
+            <InvoiceHistorySheet
+              history={history}
+              onLoad={loadFromHistory}
+              onDuplicate={duplicateFromHistory}
+              onDelete={deleteFromHistory}
+            />
+          </div>
         </div>
 
         {/* Invoice Content */}
@@ -82,7 +97,12 @@ const Index = () => {
             <Separator />
 
             {/* Invoice Details */}
-            <InvoiceDetails invoice={invoice} onChange={updateInvoice} />
+            <InvoiceDetails
+              invoice={invoice}
+              onChange={updateInvoice}
+              camposVisibles={invoice.camposVisibles}
+              onVisibilityChange={(updates) => updateInvoice({ camposVisibles: { ...invoice.camposVisibles, ...updates } })}
+            />
 
             <Separator />
 

@@ -1,15 +1,29 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Invoice, InvoiceItem, getDefaultInvoice } from '@/types/invoice';
+import { Invoice, InvoiceItem, getDefaultInvoice, getDefaultFieldVisibility } from '@/types/invoice';
 
 const STORAGE_KEY = 'factura_actual';
 const HISTORY_KEY = 'facturas_historial';
+
+// Migration function to ensure all visibility fields exist
+const migrateInvoiceVisibility = (invoice: any): Invoice => {
+  const defaultVisibility = getDefaultFieldVisibility();
+  return {
+    ...invoice,
+    camposVisibles: {
+      ...defaultVisibility,
+      ...invoice.camposVisibles,
+    },
+    // Ensure tasaImpuestosCustom exists if tasaImpuestos is -1
+    ...(invoice.tasaImpuestos === -1 && !invoice.tasaImpuestosCustom ? { tasaImpuestosCustom: 10 } : {}),
+  };
+};
 
 export const useInvoice = () => {
   const [invoice, setInvoice] = useState<Invoice>(() => {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved) {
       try {
-        return JSON.parse(saved);
+        return migrateInvoiceVisibility(JSON.parse(saved));
       } catch {
         return getDefaultInvoice();
       }
@@ -21,7 +35,8 @@ export const useInvoice = () => {
     const saved = localStorage.getItem(HISTORY_KEY);
     if (saved) {
       try {
-        return JSON.parse(saved);
+        const parsed = JSON.parse(saved);
+        return parsed.map((inv: any) => migrateInvoiceVisibility(inv));
       } catch {
         return [];
       }
@@ -38,13 +53,14 @@ export const useInvoice = () => {
     localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
   }, [history]);
 
-  const calculateTotals = useCallback((articulos: InvoiceItem[], tasaImpuestos: number, descuentoTipo: 'porcentaje' | 'fijo', descuentoValor: number) => {
+  const calculateTotals = useCallback((articulos: InvoiceItem[], tasaImpuestos: number, descuentoTipo: 'porcentaje' | 'fijo', descuentoValor: number, tasaImpuestosCustom?: number) => {
     const subtotal = articulos.reduce((sum, item) => sum + item.total, 0);
-    const descuentoMonto = descuentoTipo === 'porcentaje' 
-      ? (subtotal * descuentoValor) / 100 
+    const descuentoMonto = descuentoTipo === 'porcentaje'
+      ? (subtotal * descuentoValor) / 100
       : descuentoValor;
     const baseImponible = subtotal - descuentoMonto;
-    const impuestosMonto = (baseImponible * tasaImpuestos) / 100;
+    const actualTasaImpuestos = tasaImpuestos === -1 ? (tasaImpuestosCustom || 0) : tasaImpuestos;
+    const impuestosMonto = (baseImponible * actualTasaImpuestos) / 100;
     const total = baseImponible + impuestosMonto;
 
     return { subtotal, descuentoMonto, impuestosMonto, total };
@@ -53,18 +69,19 @@ export const useInvoice = () => {
   const updateInvoice = useCallback((updates: Partial<Invoice>) => {
     setInvoice(prev => {
       const newInvoice = { ...prev, ...updates };
-      
+
       // Recalculate totals if relevant fields changed
-      if ('articulos' in updates || 'tasaImpuestos' in updates || 'descuentoTipo' in updates || 'descuentoValor' in updates) {
+      if ('articulos' in updates || 'tasaImpuestos' in updates || 'tasaImpuestosCustom' in updates || 'descuentoTipo' in updates || 'descuentoValor' in updates) {
         const totals = calculateTotals(
           newInvoice.articulos,
           newInvoice.tasaImpuestos,
           newInvoice.descuentoTipo,
-          newInvoice.descuentoValor
+          newInvoice.descuentoValor,
+          newInvoice.tasaImpuestosCustom
         );
         return { ...newInvoice, ...totals };
       }
-      
+
       return newInvoice;
     });
   }, [calculateTotals]);

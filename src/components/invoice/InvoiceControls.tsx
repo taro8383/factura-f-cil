@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Invoice, MONEDAS } from '@/types/invoice';
+import { useLanguage, Language } from '@/contexts/LanguageContext';
 
 interface InvoiceControlsProps {
   onGeneratePdf: () => void;
@@ -12,23 +13,25 @@ interface InvoiceControlsProps {
 }
 
 export const InvoiceControls = ({ onGeneratePdf, onPrint, onClear, onSave }: InvoiceControlsProps) => {
+  const { t } = useLanguage();
+
   return (
     <div className="flex flex-wrap gap-2 no-print">
       <Button onClick={onSave} variant="default">
         <Save className="w-4 h-4 mr-2" />
-        Guardar Factura
+        {t('save')}
       </Button>
       <Button onClick={onGeneratePdf} variant="secondary">
         <FileDown className="w-4 h-4 mr-2" />
-        Generar PDF
+        {t('generatePdf')}
       </Button>
       <Button onClick={onPrint} variant="outline">
         <Printer className="w-4 h-4 mr-2" />
-        Imprimir
+        {t('print')}
       </Button>
       <Button onClick={onClear} variant="outline" className="text-destructive hover:text-destructive">
         <RotateCcw className="w-4 h-4 mr-2" />
-        Nueva Factura
+        {t('clear')}
       </Button>
     </div>
   );
@@ -42,11 +45,13 @@ interface InvoiceHistoryProps {
 }
 
 export const InvoiceHistory = ({ history, onLoad, onDuplicate, onDelete }: InvoiceHistoryProps) => {
+  const { t, language } = useLanguage();
+
   if (history.length === 0) {
     return (
       <div className="text-center py-8 text-muted-foreground">
         <FileText className="w-12 h-12 mx-auto mb-2 opacity-50" />
-        <p>No hay facturas guardadas</p>
+        <p>{t('noHistory')}</p>
       </div>
     );
   }
@@ -71,7 +76,7 @@ export const InvoiceHistory = ({ history, onLoad, onDuplicate, onDelete }: Invoi
                 </p>
               </div>
               <p className="text-xs text-muted-foreground mb-3">
-                {new Date(inv.creadoEn).toLocaleDateString('es-ES', {
+                {new Date(inv.creadoEn).toLocaleDateString(language === 'en' ? 'en-US' : 'es-ES', {
                   year: 'numeric',
                   month: 'long',
                   day: 'numeric',
@@ -79,11 +84,11 @@ export const InvoiceHistory = ({ history, onLoad, onDuplicate, onDelete }: Invoi
               </p>
               <div className="flex gap-2">
                 <Button size="sm" variant="outline" onClick={() => onLoad(inv.id)}>
-                  Cargar
+                  {t('load')}
                 </Button>
                 <Button size="sm" variant="ghost" onClick={() => onDuplicate(inv.id)}>
                   <Copy className="w-3 h-3 mr-1" />
-                  Duplicar
+                  {t('duplicate')}
                 </Button>
                 <Button
                   size="sm"
@@ -110,17 +115,19 @@ interface InvoiceHistorySheetProps {
 }
 
 export const InvoiceHistorySheet = ({ history, onLoad, onDuplicate, onDelete }: InvoiceHistorySheetProps) => {
+  const { t } = useLanguage();
+
   return (
     <Sheet>
       <SheetTrigger asChild>
         <Button variant="outline" className="no-print">
           <History className="w-4 h-4 mr-2" />
-          Historial ({history.length})
+          {t('history')} ({history.length})
         </Button>
       </SheetTrigger>
       <SheetContent>
         <SheetHeader>
-          <SheetTitle>Historial de Facturas</SheetTitle>
+          <SheetTitle>{t('history')}</SheetTitle>
         </SheetHeader>
         <div className="mt-6">
           <InvoiceHistory

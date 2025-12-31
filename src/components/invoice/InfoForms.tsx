@@ -5,6 +5,7 @@ import { Switch } from '@/components/ui/switch';
 import { CompanyInfo, ClientInfo, FieldVisibility } from '@/types/invoice';
 import { LogoUpload, LogoPrint } from './LogoUpload';
 import { Eye, EyeOff } from 'lucide-react';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface FieldWithToggleProps {
   label: string;
@@ -29,6 +30,8 @@ const FieldWithToggle = ({
   type = 'input',
   rows = 2,
 }: FieldWithToggleProps) => {
+  const { t } = useLanguage();
+
   return (
     <div className="space-y-1">
       <div className="flex items-center justify-between">
@@ -37,7 +40,7 @@ const FieldWithToggle = ({
           type="button"
           onClick={() => onVisibilityChange(!visible)}
           className="p-1 rounded hover:bg-muted transition-colors"
-          title={visible ? 'Ocultar en PDF' : 'Mostrar en PDF'}
+          title={visible ? t('hideInPdf') : t('showInPdf')}
         >
           {visible ? (
             <Eye className="h-4 w-4 text-muted-foreground" />
@@ -76,71 +79,73 @@ interface CompanyInfoFormProps {
 }
 
 export const CompanyInfoForm = ({ empresa, onChange, camposVisibles, onVisibilityChange }: CompanyInfoFormProps) => {
+  const { t } = useLanguage();
+
   return (
     <div className="space-y-4">
-      <h3 className="font-semibold text-lg text-foreground">Información de la Empresa</h3>
-      
+      <h3 className="font-semibold text-lg text-foreground">{t('companyInfo')}</h3>
+
       <div className="flex flex-col md:flex-row gap-4">
         <div className="md:w-1/3">
-          <LogoUpload 
-            logo={empresa.logo} 
-            onLogoChange={(logo) => onChange({ logo })} 
+          <LogoUpload
+            logo={empresa.logo}
+            onLogoChange={(logo) => onChange({ logo })}
           />
           <LogoPrint logo={empresa.logo} />
         </div>
-        
+
         <div className="md:w-2/3 space-y-3">
           <FieldWithToggle
-            label="Nombre de la Empresa"
+            label={t('companyName')}
             id="empresa-nombre"
             value={empresa.nombre}
             onChange={(nombre) => onChange({ nombre })}
             visible={camposVisibles.empresaNombre}
             onVisibilityChange={(v) => onVisibilityChange({ empresaNombre: v })}
-            placeholder="Mi Empresa S.A."
+            placeholder={t('placeholderCompanyName')}
           />
-          
+
           <FieldWithToggle
-            label="CUIT/CUIL"
+            label={t('companyCuit')}
             id="empresa-cuit"
             value={empresa.cuit}
             onChange={(cuit) => onChange({ cuit })}
             visible={camposVisibles.empresaCuit}
             onVisibilityChange={(v) => onVisibilityChange({ empresaCuit: v })}
-            placeholder="20-12345678-9"
+            placeholder={t('placeholderCompanyCuit')}
           />
         </div>
       </div>
-      
+
       <FieldWithToggle
-        label="Dirección"
+        label={t('address')}
         id="empresa-direccion"
         value={empresa.direccion}
         onChange={(direccion) => onChange({ direccion })}
         visible={camposVisibles.empresaDireccion}
         onVisibilityChange={(v) => onVisibilityChange({ empresaDireccion: v })}
-        placeholder="Calle Principal 123, Buenos Aires, Argentina"
+        placeholder={t('placeholderCompanyAddress')}
         type="textarea"
       />
-      
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         <FieldWithToggle
-          label="Teléfono"
+          label={t('phone')}
           id="empresa-telefono"
           value={empresa.telefono}
           onChange={(telefono) => onChange({ telefono })}
           visible={camposVisibles.empresaTelefono}
           onVisibilityChange={(v) => onVisibilityChange({ empresaTelefono: v })}
-          placeholder="+54 11 1234 5678"
+          placeholder={t('placeholderCompanyPhone')}
         />
         <FieldWithToggle
-          label="Email"
+          label={t('email')}
           id="empresa-email"
           value={empresa.email}
           onChange={(email) => onChange({ email })}
           visible={camposVisibles.empresaEmail}
           onVisibilityChange={(v) => onVisibilityChange({ empresaEmail: v })}
-          placeholder="contacto@miempresa.com"
+          placeholder={t('placeholderCompanyEmail')}
         />
       </div>
     </div>
@@ -155,60 +160,62 @@ interface ClientInfoFormProps {
 }
 
 export const ClientInfoForm = ({ cliente, onChange, camposVisibles, onVisibilityChange }: ClientInfoFormProps) => {
+  const { t } = useLanguage();
+
   return (
     <div className="space-y-4">
-      <h3 className="font-semibold text-lg text-foreground">Información del Cliente</h3>
-      
+      <h3 className="font-semibold text-lg text-foreground">{t('clientInfo')}</h3>
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         <FieldWithToggle
-          label="Nombre del Cliente"
+          label={t('clientName')}
           id="cliente-nombre"
           value={cliente.nombre}
           onChange={(nombre) => onChange({ nombre })}
           visible={camposVisibles.clienteNombre}
           onVisibilityChange={(v) => onVisibilityChange({ clienteNombre: v })}
-          placeholder="Cliente Ejemplo S.L."
+          placeholder={t('placeholderClientName')}
         />
         <FieldWithToggle
-          label="CUIT/CUIL"
+          label={t('clientCuit')}
           id="cliente-cuit"
           value={cliente.cuit}
           onChange={(cuit) => onChange({ cuit })}
           visible={camposVisibles.clienteCuit}
           onVisibilityChange={(v) => onVisibilityChange({ clienteCuit: v })}
-          placeholder="30-87654321-0"
+          placeholder={t('placeholderClientCuit')}
         />
       </div>
-      
+
       <FieldWithToggle
-        label="Dirección"
+        label={t('address')}
         id="cliente-direccion"
         value={cliente.direccion}
         onChange={(direccion) => onChange({ direccion })}
         visible={camposVisibles.clienteDireccion}
         onVisibilityChange={(v) => onVisibilityChange({ clienteDireccion: v })}
-        placeholder="Avenida Secundaria 456, Córdoba, Argentina"
+        placeholder={t('placeholderClientAddress')}
         type="textarea"
       />
-      
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         <FieldWithToggle
-          label="Teléfono"
+          label={t('phone')}
           id="cliente-telefono"
           value={cliente.telefono}
           onChange={(telefono) => onChange({ telefono })}
           visible={camposVisibles.clienteTelefono}
           onVisibilityChange={(v) => onVisibilityChange({ clienteTelefono: v })}
-          placeholder="+54 351 234 5678"
+          placeholder={t('placeholderClientPhone')}
         />
         <FieldWithToggle
-          label="Email"
+          label={t('email')}
           id="cliente-email"
           value={cliente.email}
           onChange={(email) => onChange({ email })}
           visible={camposVisibles.clienteEmail}
           onVisibilityChange={(v) => onVisibilityChange({ clienteEmail: v })}
-          placeholder="cliente@ejemplo.com"
+          placeholder={t('placeholderClientEmail')}
         />
       </div>
     </div>

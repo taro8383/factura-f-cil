@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { InvoiceItem, MONEDAS } from '@/types/invoice';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface ItemsTableProps {
   articulos: InvoiceItem[];
@@ -13,15 +14,16 @@ interface ItemsTableProps {
 }
 
 export const ItemsTable = ({ articulos, moneda, onAddItem, onUpdateItem, onRemoveItem }: ItemsTableProps) => {
+  const { t } = useLanguage();
   const simboloMoneda = MONEDAS.find(m => m.codigo === moneda)?.simbolo || '$';
 
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="font-semibold text-lg text-foreground">Artículos / Servicios</h3>
+        <h3 className="font-semibold text-lg text-foreground">{t('itemsTable')}</h3>
         <Button onClick={onAddItem} size="sm" className="no-print">
           <Plus className="w-4 h-4 mr-1" />
-          Agregar Artículo
+          {t('addItem')}
         </Button>
       </div>
 
@@ -30,10 +32,10 @@ export const ItemsTable = ({ articulos, moneda, onAddItem, onUpdateItem, onRemov
         <Table>
           <TableHeader>
             <TableRow className="bg-muted/50">
-              <TableHead className="w-[40%]">Descripción</TableHead>
-              <TableHead className="text-center w-[15%]">Cantidad</TableHead>
-              <TableHead className="text-right w-[18%]">Precio Unitario</TableHead>
-              <TableHead className="text-right w-[18%]">Total</TableHead>
+              <TableHead className="w-[40%]">{t('description')}</TableHead>
+              <TableHead className="text-center w-[15%]">{t('quantity')}</TableHead>
+              <TableHead className="text-right w-[18%]">{t('unitPrice')}</TableHead>
+              <TableHead className="text-right w-[18%]">{t('total')}</TableHead>
               <TableHead className="w-[9%] no-print"></TableHead>
             </TableRow>
           </TableHeader>
@@ -44,7 +46,7 @@ export const ItemsTable = ({ articulos, moneda, onAddItem, onUpdateItem, onRemov
                   <Input
                     value={item.descripcion}
                     onChange={(e) => onUpdateItem(item.id, { descripcion: e.target.value })}
-                    placeholder="Descripción del artículo o servicio"
+                    placeholder={t('placeholderDescription')}
                     className="border-0 bg-transparent focus-visible:ring-1"
                   />
                 </TableCell>
@@ -93,7 +95,7 @@ export const ItemsTable = ({ articulos, moneda, onAddItem, onUpdateItem, onRemov
         {articulos.map((item, index) => (
           <div key={item.id} className="bg-muted/30 rounded-lg p-4 space-y-3">
             <div className="flex items-center justify-between">
-              <span className="font-medium text-sm text-muted-foreground">Artículo {index + 1}</span>
+              <span className="font-medium text-sm text-muted-foreground">{t('description')} {index + 1}</span>
               <Button
                 variant="ghost"
                 size="icon"
@@ -104,16 +106,16 @@ export const ItemsTable = ({ articulos, moneda, onAddItem, onUpdateItem, onRemov
                 <Trash2 className="w-4 h-4" />
               </Button>
             </div>
-            
+
             <Input
               value={item.descripcion}
               onChange={(e) => onUpdateItem(item.id, { descripcion: e.target.value })}
-              placeholder="Descripción"
+              placeholder={t('description')}
             />
-            
+
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="text-xs text-muted-foreground">Cantidad</label>
+                <label className="text-xs text-muted-foreground">{t('quantity')}</label>
                 <Input
                   type="number"
                   min="0"
@@ -123,7 +125,7 @@ export const ItemsTable = ({ articulos, moneda, onAddItem, onUpdateItem, onRemov
                 />
               </div>
               <div>
-                <label className="text-xs text-muted-foreground">Precio Unitario</label>
+                <label className="text-xs text-muted-foreground">{t('unitPrice')}</label>
                 <Input
                   type="number"
                   min="0"
@@ -133,9 +135,9 @@ export const ItemsTable = ({ articulos, moneda, onAddItem, onUpdateItem, onRemov
                 />
               </div>
             </div>
-            
+
             <div className="flex justify-between items-center pt-2 border-t border-border">
-              <span className="text-sm font-medium">Total:</span>
+              <span className="text-sm font-medium">{t('total')}:</span>
               <span className="font-bold text-primary">{simboloMoneda}{item.total.toFixed(2)}</span>
             </div>
           </div>

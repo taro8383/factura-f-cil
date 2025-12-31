@@ -34,6 +34,11 @@ export interface FieldVisibility {
   clienteTelefono: boolean;
   clienteEmail: boolean;
   clienteCuit: boolean;
+  numero: boolean;
+  fechaFactura: boolean;
+  fechaVencimiento: boolean;
+  terminosPago: boolean;
+  moneda: boolean;
   notas: boolean;
   instruccionesPago: boolean;
 }
@@ -51,6 +56,7 @@ export interface Invoice {
   subtotal: number;
   tasaImpuestos: number;
   impuestosMonto: number;
+  tasaImpuestosCustom?: number; // For custom tax rates when tasaImpuestos is -1
   descuentoTipo: 'porcentaje' | 'fijo';
   descuentoValor: number;
   descuentoMonto: number;
@@ -63,32 +69,33 @@ export interface Invoice {
 }
 
 export const MONEDAS = [
-  { codigo: 'EUR', simbolo: '€', nombre: 'Euro' },
-  { codigo: 'USD', simbolo: '$', nombre: 'Dólar Estadounidense' },
-  { codigo: 'MXN', simbolo: '$', nombre: 'Peso Mexicano' },
-  { codigo: 'ARS', simbolo: '$', nombre: 'Peso Argentino' },
-  { codigo: 'COP', simbolo: '$', nombre: 'Peso Colombiano' },
-  { codigo: 'CLP', simbolo: '$', nombre: 'Peso Chileno' },
-  { codigo: 'PEN', simbolo: 'S/', nombre: 'Sol Peruano' },
-  { codigo: 'GBP', simbolo: '£', nombre: 'Libra Esterlina' },
+  { codigo: 'EUR', simbolo: '€', nombre: 'Euro', nombreEn: 'Euro' },
+  { codigo: 'USD', simbolo: '$', nombre: 'Dólar Estadounidense', nombreEn: 'US Dollar' },
+  { codigo: 'MXN', simbolo: '$', nombre: 'Peso Mexicano', nombreEn: 'Mexican Peso' },
+  { codigo: 'ARS', simbolo: '$', nombre: 'Peso Argentino', nombreEn: 'Argentine Peso' },
+  { codigo: 'COP', simbolo: '$', nombre: 'Peso Colombiano', nombreEn: 'Colombian Peso' },
+  { codigo: 'CLP', simbolo: '$', nombre: 'Peso Chileno', nombreEn: 'Chilean Peso' },
+  { codigo: 'PEN', simbolo: 'S/', nombre: 'Sol Peruano', nombreEn: 'Peruvian Sol' },
+  { codigo: 'GBP', simbolo: '£', nombre: 'Libra Esterlina', nombreEn: 'Pound Sterling' },
 ];
 
 export const TASAS_IMPUESTOS = [
-  { valor: 0, etiqueta: 'Sin IVA (0%)' },
-  { valor: 4, etiqueta: 'IVA Superreducido (4%)' },
-  { valor: 10, etiqueta: 'IVA Reducido (10%)' },
-  { valor: 16, etiqueta: 'IVA (16%)' },
-  { valor: 19, etiqueta: 'IVA (19%)' },
-  { valor: 21, etiqueta: 'IVA General (21%)' },
+  { valor: 0, etiqueta: 'Sin IVA (0%)', etiquetaEn: 'No VAT (0%)' },
+  { valor: 4, etiqueta: 'IVA Superreducido (4%)', etiquetaEn: 'Super-reduced VAT (4%)' },
+  { valor: 10, etiqueta: 'IVA Reducido (10%)', etiquetaEn: 'Reduced VAT (10%)' },
+  { valor: 16, etiqueta: 'IVA (16%)', etiquetaEn: 'VAT (16%)' },
+  { valor: 19, etiqueta: 'IVA (19%)', etiquetaEn: 'VAT (19%)' },
+  { valor: 21, etiqueta: 'IVA General (21%)', etiquetaEn: 'Standard VAT (21%)' },
+  { valor: -1, etiqueta: 'Personalizado', etiquetaEn: 'Custom' },
 ];
 
 export const TERMINOS_PAGO = [
-  { valor: 'contado', etiqueta: 'Contado' },
-  { valor: '15dias', etiqueta: '15 días' },
-  { valor: '30dias', etiqueta: '30 días' },
-  { valor: '45dias', etiqueta: '45 días' },
-  { valor: '60dias', etiqueta: '60 días' },
-  { valor: '90dias', etiqueta: '90 días' },
+  { valor: 'contado', etiqueta: 'Contado', etiquetaEn: 'Cash' },
+  { valor: '15dias', etiqueta: '15 días', etiquetaEn: '15 days' },
+  { valor: '30dias', etiqueta: '30 días', etiquetaEn: '30 days' },
+  { valor: '45dias', etiqueta: '45 días', etiquetaEn: '45 days' },
+  { valor: '60dias', etiqueta: '60 días', etiquetaEn: '60 days' },
+  { valor: '90dias', etiqueta: '90 días', etiquetaEn: '90 days' },
 ];
 
 export const getDefaultFieldVisibility = (): FieldVisibility => ({
@@ -102,6 +109,11 @@ export const getDefaultFieldVisibility = (): FieldVisibility => ({
   clienteTelefono: true,
   clienteEmail: true,
   clienteCuit: true,
+  numero: true,
+  fechaFactura: true,
+  fechaVencimiento: true,
+  terminosPago: true,
+  moneda: true,
   notas: true,
   instruccionesPago: true,
 });
