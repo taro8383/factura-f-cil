@@ -68,10 +68,14 @@ const Index = () => {
               <CompanyInfoForm
                 empresa={invoice.empresa}
                 onChange={(updates) => updateInvoice({ empresa: { ...invoice.empresa, ...updates } })}
+                camposVisibles={invoice.camposVisibles}
+                onVisibilityChange={(updates) => updateInvoice({ camposVisibles: { ...invoice.camposVisibles, ...updates } })}
               />
               <ClientInfoForm
                 cliente={invoice.cliente}
                 onChange={(updates) => updateInvoice({ cliente: { ...invoice.cliente, ...updates } })}
+                camposVisibles={invoice.camposVisibles}
+                onVisibilityChange={(updates) => updateInvoice({ camposVisibles: { ...invoice.camposVisibles, ...updates } })}
               />
             </div>
 
@@ -102,7 +106,9 @@ const Index = () => {
             <InvoiceFooter
               notas={invoice.notas}
               instruccionesPago={invoice.instruccionesPago}
+              camposVisibles={invoice.camposVisibles}
               onChange={updateInvoice}
+              onVisibilityChange={(updates) => updateInvoice({ camposVisibles: { ...invoice.camposVisibles, ...updates } })}
             />
           </CardContent>
         </Card>

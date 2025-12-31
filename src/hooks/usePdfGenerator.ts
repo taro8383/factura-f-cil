@@ -21,10 +21,18 @@ export const usePdfGenerator = () => {
     const contentWidth = pageWidth - margin * 2;
     let y = margin;
 
-    // Colors
-    const primaryColor: [number, number, number] = [79, 70, 229]; // #4f46e5
+    // Parse accent color from hex to RGB
+    const hexToRgb = (hex: string): [number, number, number] => {
+      const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+      return result 
+        ? [parseInt(result[1], 16), parseInt(result[2], 16), parseInt(result[3], 16)]
+        : [79, 70, 229]; // Default indigo
+    };
+
+    const primaryColor = hexToRgb(invoice.colorAccento || '#4f46e5');
     const textColor: [number, number, number] = [31, 41, 55];
     const mutedColor: [number, number, number] = [107, 114, 128];
+    const vis = invoice.camposVisibles;
 
     // Helper functions
     const setFont = (style: 'normal' | 'bold' = 'normal', size = 10) => {
@@ -42,7 +50,6 @@ export const usePdfGenerator = () => {
     };
 
     // === HEADER with Logo ===
-    // Add logo if exists
     if (invoice.empresa.logo) {
       try {
         const img = new Image();
@@ -61,7 +68,7 @@ export const usePdfGenerator = () => {
           pdf.addImage(invoice.empresa.logo, 'PNG', margin, y, logoWidth, logoHeight);
         }
       } catch {
-        // Logo failed to load, continue without it
+        // Logo failed to load
       }
     }
 
@@ -82,17 +89,18 @@ export const usePdfGenerator = () => {
     drawText('DE:', margin, y, { color: mutedColor });
     y += 5;
     
-    setFont('bold', 11);
-    drawText(invoice.empresa.nombre, margin, y);
-    y += 5;
+    if (vis.empresaNombre) {
+      setFont('bold', 11);
+      drawText(invoice.empresa.nombre, margin, y);
+      y += 5;
+    }
     
     setFont('normal', 9);
-    const empresaLines = [
-      invoice.empresa.nif ? `NIF: ${invoice.empresa.nif}` : '',
-      invoice.empresa.direccion,
-      invoice.empresa.telefono,
-      invoice.empresa.email,
-    ].filter(Boolean);
+    const empresaLines: string[] = [];
+    if (vis.empresaCuit && invoice.empresa.cuit) empresaLines.push(`CUIT: ${invoice.empresa.cuit}`);
+    if (vis.empresaDireccion && invoice.empresa.direccion) empresaLines.push(invoice.empresa.direccion);
+    if (vis.empresaTelefono && invoice.empresa.telefono) empresaLines.push(invoice.empresa.telefono);
+    if (vis.empresaEmail && invoice.empresa.email) empresaLines.push(invoice.empresa.email);
     
     empresaLines.forEach((line) => {
       drawText(line, margin, y, { color: mutedColor, maxWidth: colWidth });
@@ -100,24 +108,26 @@ export const usePdfGenerator = () => {
     });
 
     // Reset Y for client info (right column)
-    let clientY = y - empresaLines.length * 4 - 10;
+    const empresaBlockHeight = (vis.empresaNombre ? 5 : 0) + empresaLines.length * 4;
+    let clientY = y - empresaBlockHeight;
     const rightColX = margin + colWidth + 10;
 
     setFont('bold', 10);
     drawText('PARA:', rightColX, clientY, { color: mutedColor });
     clientY += 5;
     
-    setFont('bold', 11);
-    drawText(invoice.cliente.nombre, rightColX, clientY);
-    clientY += 5;
+    if (vis.clienteNombre) {
+      setFont('bold', 11);
+      drawText(invoice.cliente.nombre, rightColX, clientY);
+      clientY += 5;
+    }
     
     setFont('normal', 9);
-    const clienteLines = [
-      invoice.cliente.nif ? `NIF: ${invoice.cliente.nif}` : '',
-      invoice.cliente.direccion,
-      invoice.cliente.telefono,
-      invoice.cliente.email,
-    ].filter(Boolean);
+    const clienteLines: string[] = [];
+    if (vis.clienteCuit && invoice.cliente.cuit) clienteLines.push(`CUIT: ${invoice.cliente.cuit}`);
+    if (vis.clienteDireccion && invoice.cliente.direccion) clienteLines.push(invoice.cliente.direccion);
+    if (vis.clienteTelefono && invoice.cliente.telefono) clienteLines.push(invoice.cliente.telefono);
+    if (vis.clienteEmail && invoice.cliente.email) clienteLines.push(invoice.cliente.email);
     
     clienteLines.forEach((line) => {
       drawText(line, rightColX, clientY, { color: mutedColor, maxWidth: colWidth });
@@ -144,7 +154,6 @@ export const usePdfGenerator = () => {
     y += 12;
 
     // === ITEMS TABLE ===
-    // Table header
     pdf.setFillColor(...primaryColor);
     pdf.rect(margin, y, contentWidth, 8, 'F');
     
@@ -154,7 +163,6 @@ export const usePdfGenerator = () => {
     const descWidth = contentWidth * 0.45;
     const qtyWidth = contentWidth * 0.15;
     const priceWidth = contentWidth * 0.2;
-    const totalWidth = contentWidth * 0.2;
     
     pdf.text('Descripción', margin + 3, y + 5.5);
     pdf.text('Cantidad', margin + descWidth + qtyWidth / 2, y + 5.5, { align: 'center' });
@@ -163,7 +171,6 @@ export const usePdfGenerator = () => {
 
     y += 8;
 
-    // Table rows
     const simbolo = MONEDAS.find(m => m.codigo === invoice.moneda)?.simbolo || '$';
     
     invoice.articulos.forEach((item, index) => {
@@ -177,7 +184,6 @@ export const usePdfGenerator = () => {
       setFont('normal', 9);
       pdf.setTextColor(...textColor);
       
-      // Truncate description if too long
       const maxDescLength = 45;
       const desc = item.descripcion.length > maxDescLength 
         ? item.descripcion.substring(0, maxDescLength) + '...' 
@@ -191,7 +197,6 @@ export const usePdfGenerator = () => {
       y += rowHeight;
     });
 
-    // Table border
     pdf.setDrawColor(229, 231, 235);
     pdf.rect(margin, y - invoice.articulos.length * 7, contentWidth, invoice.articulos.length * 7);
 
@@ -199,15 +204,12 @@ export const usePdfGenerator = () => {
 
     // === TOTALS ===
     const totalsX = margin + contentWidth - 70;
-    const totalsWidth = 70;
 
-    // Subtotal
     setFont('normal', 9);
     drawText('Subtotal:', totalsX, y, { color: mutedColor });
     drawText(`${simbolo}${invoice.subtotal.toFixed(2)}`, margin + contentWidth, y, { align: 'right' });
     y += 5;
 
-    // Descuento
     if (invoice.descuentoMonto > 0) {
       const descuentoLabel = invoice.descuentoTipo === 'porcentaje' 
         ? `Descuento (${invoice.descuentoValor}%):` 
@@ -217,15 +219,13 @@ export const usePdfGenerator = () => {
       y += 5;
     }
 
-    // Impuestos
     const tasaLabel = TASAS_IMPUESTOS.find(t => t.valor === invoice.tasaImpuestos)?.etiqueta || `IVA (${invoice.tasaImpuestos}%)`;
     drawText(tasaLabel + ':', totalsX, y, { color: mutedColor });
     drawText(`${simbolo}${invoice.impuestosMonto.toFixed(2)}`, margin + contentWidth, y, { align: 'right' });
     y += 6;
 
-    // Total
     pdf.setFillColor(...primaryColor);
-    pdf.roundedRect(totalsX - 5, y - 1, totalsWidth + 5, 10, 2, 2, 'F');
+    pdf.roundedRect(totalsX - 5, y - 1, 75, 10, 2, 2, 'F');
     
     setFont('bold', 11);
     pdf.setTextColor(255, 255, 255);
@@ -235,12 +235,15 @@ export const usePdfGenerator = () => {
     y += 18;
 
     // === FOOTER: Notes & Payment Instructions ===
-    if (invoice.notas || invoice.instruccionesPago) {
+    const showNotas = vis.notas && invoice.notas;
+    const showInstr = vis.instruccionesPago && invoice.instruccionesPago;
+    
+    if (showNotas || showInstr) {
       pdf.setDrawColor(229, 231, 235);
       pdf.line(margin, y, margin + contentWidth, y);
       y += 8;
 
-      if (invoice.notas) {
+      if (showNotas) {
         setFont('bold', 9);
         drawText('Notas:', margin, y, { color: mutedColor });
         y += 5;
@@ -252,11 +255,11 @@ export const usePdfGenerator = () => {
         });
       }
 
-      if (invoice.instruccionesPago) {
-        let instrY = y - (invoice.notas ? 9 + Math.min(3, pdf.splitTextToSize(invoice.notas, contentWidth / 2 - 5).length) * 4 : 0);
+      if (showInstr) {
+        let instrY = y - (showNotas ? 9 + Math.min(3, pdf.splitTextToSize(invoice.notas, contentWidth / 2 - 5).length) * 4 : 0);
         const instrX = margin + contentWidth / 2 + 5;
         
-        if (!invoice.notas) instrY = y - 8;
+        if (!showNotas) instrY = y - 8;
         
         setFont('bold', 9);
         drawText('Instrucciones de Pago:', instrX, instrY, { color: mutedColor });
@@ -270,7 +273,6 @@ export const usePdfGenerator = () => {
       }
     }
 
-    // Save PDF
     const fileName = `Factura_${invoice.numero}_${invoice.fechaFactura}.pdf`;
     pdf.save(fileName);
   }, []);

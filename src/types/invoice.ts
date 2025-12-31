@@ -11,7 +11,7 @@ export interface CompanyInfo {
   direccion: string;
   telefono: string;
   email: string;
-  nif: string;
+  cuit: string;
   logo?: string;
 }
 
@@ -20,7 +20,22 @@ export interface ClientInfo {
   direccion: string;
   telefono: string;
   email: string;
-  nif: string;
+  cuit: string;
+}
+
+export interface FieldVisibility {
+  empresaNombre: boolean;
+  empresaDireccion: boolean;
+  empresaTelefono: boolean;
+  empresaEmail: boolean;
+  empresaCuit: boolean;
+  clienteNombre: boolean;
+  clienteDireccion: boolean;
+  clienteTelefono: boolean;
+  clienteEmail: boolean;
+  clienteCuit: boolean;
+  notas: boolean;
+  instruccionesPago: boolean;
 }
 
 export interface Invoice {
@@ -43,6 +58,8 @@ export interface Invoice {
   notas: string;
   instruccionesPago: string;
   creadoEn: string;
+  camposVisibles: FieldVisibility;
+  colorAccento: string;
 }
 
 export const MONEDAS = [
@@ -74,6 +91,21 @@ export const TERMINOS_PAGO = [
   { valor: '90dias', etiqueta: '90 días' },
 ];
 
+export const getDefaultFieldVisibility = (): FieldVisibility => ({
+  empresaNombre: true,
+  empresaDireccion: true,
+  empresaTelefono: true,
+  empresaEmail: true,
+  empresaCuit: true,
+  clienteNombre: true,
+  clienteDireccion: true,
+  clienteTelefono: true,
+  clienteEmail: true,
+  clienteCuit: true,
+  notas: true,
+  instruccionesPago: true,
+});
+
 export const getDefaultInvoice = (): Invoice => {
   const today = new Date();
   const dueDate = new Date(today);
@@ -91,7 +123,7 @@ export const getDefaultInvoice = (): Invoice => {
       direccion: 'Calle Principal 123, 28001 Madrid, España',
       telefono: '+34 912 345 678',
       email: 'contacto@miempresa.com',
-      nif: 'B12345678',
+      cuit: '20-12345678-9',
       logo: undefined,
     },
     cliente: {
@@ -99,7 +131,7 @@ export const getDefaultInvoice = (): Invoice => {
       direccion: 'Avenida Secundaria 456, 08001 Barcelona, España',
       telefono: '+34 934 567 890',
       email: 'cliente@ejemplo.com',
-      nif: 'B87654321',
+      cuit: '30-87654321-0',
     },
     articulos: [
       {
@@ -127,5 +159,7 @@ export const getDefaultInvoice = (): Invoice => {
     notas: 'Gracias por su confianza. Esta factura es válida como comprobante fiscal.',
     instruccionesPago: 'Transferencia bancaria a la cuenta: ES12 3456 7890 1234 5678 9012\nBanco: Banco Ejemplo\nConcepto: Factura FAC-2024-001',
     creadoEn: today.toISOString(),
+    camposVisibles: getDefaultFieldVisibility(),
+    colorAccento: '#4f46e5',
   };
 };
