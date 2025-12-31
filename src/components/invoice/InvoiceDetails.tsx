@@ -2,7 +2,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Invoice, MONEDAS, TERMINOS_PAGO } from '@/types/invoice';
-import { cn } from '@/lib/utils';
+import { ColorPicker } from './ColorPicker';
 
 interface InvoiceDetailsProps {
   invoice: Invoice;
@@ -83,6 +83,11 @@ export const InvoiceDetails = ({ invoice, onChange }: InvoiceDetailsProps) => {
           </Select>
         </div>
       </div>
+      
+      <ColorPicker
+        color={invoice.colorAccento || '#4f46e5'}
+        onChange={(color) => onChange({ colorAccento: color })}
+      />
     </div>
   );
 };
